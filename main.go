@@ -8,7 +8,9 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -18,16 +20,19 @@ type SpotifyCredentials struct {
 	ClientSecret string
 }
 
-type SpotifyTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
-	Scope       string `json:"scope"`
-}
-
 type SpotifyTopTracksResponse struct {
 	Items []struct {
-		Name string `json:"name"`
+		Name    string `json:"name"`
+		Artists []struct {
+			Name string `json:"name"`
+		} `json:"artists"`
+		Album struct {
+			Images []struct {
+				URL    string `json:"url"`
+				Height int    `json:"height"`
+				Width  int    `json:"width"`
+			} `json:"images"`
+		} `json:"album"`
 	} `json:"items"`
 }
 
@@ -56,56 +61,39 @@ func main() {
 		ClientSecret: os.Getenv("CLIENTSECRET"),
 	}
 
-	// Obtain access token
-	accessToken, err := getAccessToken(credentials)
-	if err != nil {
-		fmt.Println("Error obtaining access token:", err)
-		return
-	}
-
-	// Retrieve top tracks
-	topTracks, err := getTopTracks(accessToken)
-	if err != nil {
-		fmt.Println("Error retrieving top tracks:", err)
-		return
-	}
-
-	// Print top tracks
-	fmt.Println("Top Tracks:")
-	for i, track := range topTracks {
-		fmt.Printf("%d. %s\n", i+1, track.Name)
-	}
-
-	nowPlaying, err := getNowListening(accessToken)
-	if err != nil {
-		fmt.Println("Error retrieving current track:", err)
-		return
-	}
-
-	fmt.Println(nowPlaying)
-
 	router := gin.Default()
 
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173", "https://rubionestor611.github.io"},
+		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST"},
+		AllowHeaders:     []string{"Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	router.GET("/nestor/spotify", func(c *gin.Context) {
+
 		accessToken, err := getAccessToken(credentials)
 		if err != nil {
-			return
+			c.Status(500)
 		}
 
-		top, _ := getTopTracks(accessToken)
-		current, _ := getNowListening(accessToken)
+		fmt.Println(accessToken)
 
-		fmt.Println(top, current)
+		top, _ := getTopTracks(accessToken.AccessToken)
+		current, _ := getNowListening(accessToken.AccessToken)
 
 		c.JSON(http.StatusOK, gin.H{
-			"top": "hat",
+			"topTracks": top.Items,
+			"current":   current,
 		})
 	})
 
 	router.Run(":8080")
 }
 
-func getAccessToken(credentials SpotifyCredentials) (string, error) {
+func getAccessToken(credentials SpotifyCredentials) (*TokenResponse, error) {
 	// Encode client ID and client secret in base64
 	auth := base64.StdEncoding.EncodeToString([]byte(credentials.ClientID + ":" + credentials.ClientSecret))
 	refresh := os.Getenv("REFRESH")
@@ -116,7 +104,7 @@ func getAccessToken(credentials SpotifyCredentials) (string, error) {
 
 	req, err := http.NewRequest("POST", "https://accounts.spotify.com/api/token", strings.NewReader(data.Encode()))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	req.Header.Set("Authorization", "Basic "+auth)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -124,20 +112,20 @@ func getAccessToken(credentials SpotifyCredentials) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	var tokenResponse TokenResponse
 	err = json.NewDecoder(resp.Body).Decode(&tokenResponse)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return tokenResponse.AccessToken, nil
+	return &tokenResponse, nil
 }
 
-func getTopTracks(accessToken string) ([]struct{ Name string }, error) {
+func getTopTracks(accessToken string) (*SpotifyTopTracksResponse, error) {
 	req, err := http.NewRequest("GET", "https://api.spotify.com/v1/me/top/tracks", nil)
 	if err != nil {
 		return nil, err
@@ -157,7 +145,7 @@ func getTopTracks(accessToken string) ([]struct{ Name string }, error) {
 		return nil, err
 	}
 
-	return []struct{ Name string }(tracksResponse.Items), nil
+	return &tracksResponse, nil
 }
 
 func getNowListening(accessToken string) (*Track, error) {
@@ -173,7 +161,7 @@ func getNowListening(accessToken string) (*Track, error) {
 	}
 
 	if res.StatusCode != 200 {
-		return nil, fmt.Errorf("%d was returned", res.StatusCode)
+		return nil, nil
 	}
 
 	defer res.Body.Close()
