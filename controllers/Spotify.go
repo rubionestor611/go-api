@@ -109,7 +109,7 @@ func GetTopTracks() (*SpotifyTopTracksResponse, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", "https://api.spotify.com/v1/me/top/tracks", nil)
+	req, err := http.NewRequest("GET", "https://api.spotify.com/v1/me/top/tracks?time_range=short_term", nil)
 	if err != nil {
 		return nil, err
 	}
