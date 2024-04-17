@@ -21,7 +21,7 @@ func Nestor(g *gin.RouterGroup) {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to get Nestor's currently playing Spotify Song"})
 		}
 		if current == nil {
-			c.JSON(http.StatusNotFound, gin.H{"message": "Nestor's currently not listening to Spotify music"})
+			c.JSON(http.StatusNotFound, gin.H{"message": "Nestor's currently not listening to Spotify music. Check back in shortly!"})
 		}
 		c.JSON(http.StatusOK, current)
 	})
