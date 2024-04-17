@@ -46,6 +46,13 @@ type SpotifyTrack struct {
 		Artists []struct {
 			Name string `json:"name"`
 		} `json:"artists"`
+		Album struct {
+			Images []struct {
+				URL    string `json:"url"`
+				Height int    `json:"height"`
+				Width  int    `json:"width"`
+			} `json:"images"`
+		} `json:"album"`
 	} `json:"item"`
 }
 
