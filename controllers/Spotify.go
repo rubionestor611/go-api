@@ -64,7 +64,9 @@ type SpotifyUser struct {
 	URI    string `json:"uri"`
 	HREF   string `json:"href"`
 	Images []struct {
-		URL string `json:"url"`
+		URL    string `json:"url"`
+		Width  int    `json:"width"`
+		Height int    `json:"height"`
 	} `json:"images"`
 	ExternalURLs struct {
 		Spotify string `json:"spotify"`
