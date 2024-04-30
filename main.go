@@ -21,6 +21,7 @@ func main() {
 	}))
 
 	routes.Nestor(router.Group("/nestor"))
+	routes.V1(router.Group("/v1"))
 
-	router.Run(":8080")
+	router.Run(":80")
 }
