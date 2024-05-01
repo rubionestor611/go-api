@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -41,19 +42,21 @@ type TokenResponse struct {
 }
 
 type SpotifyTrack struct {
-	Item struct {
-		Name    string `json:"name"`
-		Artists []struct {
-			Name string `json:"name"`
-		} `json:"artists"`
-		Album struct {
-			Images []struct {
-				URL    string `json:"url"`
-				Height int    `json:"height"`
-				Width  int    `json:"width"`
-			} `json:"images"`
-		} `json:"album"`
-	} `json:"item"`
+	Name    string `json:"name"`
+	Artists []struct {
+		Name string `json:"name"`
+	} `json:"artists"`
+	Album struct {
+		Images []struct {
+			URL    string `json:"url"`
+			Height int    `json:"height"`
+			Width  int    `json:"width"`
+		} `json:"images"`
+	} `json:"album"`
+}
+
+type CurrentTrack struct {
+	Item SpotifyTrack `json:"item"`
 }
 
 type SpotifyUser struct {
@@ -73,7 +76,25 @@ type SpotifyUser struct {
 	} `json:"external_urls"`
 }
 
-func GetAccessToken() (*TokenResponse, error) {
+type RecentlyPlayed struct {
+	Items []struct {
+		Track struct {
+			Name    string `json:"name"`
+			Artists []struct {
+				Name string `json:"name"`
+			} `json:"artists"`
+			Album struct {
+				Images []struct {
+					URL    string `json:"url"`
+					Height int    `json:"height"`
+					Width  int    `json:"width"`
+				} `json:"images"`
+			} `json:"album"`
+		} `json:"track"`
+	} `json:"items"`
+}
+
+func GetAccessToken(key string) (*TokenResponse, error) {
 	godotenv.Load(".env")
 
 	credentials := SpotifyCredentials{
@@ -83,7 +104,7 @@ func GetAccessToken() (*TokenResponse, error) {
 
 	// Encode client ID and client secret in base64
 	auth := base64.StdEncoding.EncodeToString([]byte(credentials.ClientID + ":" + credentials.ClientSecret))
-	refresh := os.Getenv("REFRESH")
+	refresh := os.Getenv(key)
 	// Prepare request body
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
@@ -113,7 +134,7 @@ func GetAccessToken() (*TokenResponse, error) {
 }
 
 func GetTopTracks() (*SpotifyTopTracksResponse, error) {
-	token, err := GetAccessToken()
+	token, err := GetAccessToken("REFRESH")
 	if err != nil {
 		return nil, err
 	}
@@ -140,8 +161,8 @@ func GetTopTracks() (*SpotifyTopTracksResponse, error) {
 	return &tracksResponse, nil
 }
 
-func GetNowListening() (*SpotifyTrack, error) {
-	token, err := GetAccessToken()
+func GetNowListening() (*CurrentTrack, error) {
+	token, err := GetAccessToken("REFRESH")
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +184,7 @@ func GetNowListening() (*SpotifyTrack, error) {
 
 	defer res.Body.Close()
 
-	var nowPlaying SpotifyTrack
+	var nowPlaying CurrentTrack
 	err = json.NewDecoder(res.Body).Decode(&nowPlaying)
 	if err != nil {
 		return nil, err
@@ -175,7 +196,7 @@ func GetNowListening() (*SpotifyTrack, error) {
 }
 
 func GetSpotifyProfile() (*SpotifyUser, error) {
-	token, err := GetAccessToken()
+	token, err := GetAccessToken("REFRESH")
 	if err != nil {
 		return nil, err
 	}
@@ -201,4 +222,37 @@ func GetSpotifyProfile() (*SpotifyUser, error) {
 	}
 
 	return &info, nil
+}
+
+func GetSpotifyLastPlayed() (*RecentlyPlayed, error) {
+	token, err := GetAccessToken("REFRESH_RECENT")
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", "https://api.spotify.com/v1/me/player/recently-played?limit=1", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+
+	fmt.Println("Authorization", "Bearer "+token.AccessToken)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	var recent RecentlyPlayed
+	err = json.NewDecoder(res.Body).Decode(&recent)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println(res.Body)
+
+	return &recent, nil
 }

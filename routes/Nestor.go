@@ -32,4 +32,11 @@ func Nestor(g *gin.RouterGroup) {
 		}
 		c.JSON(http.StatusOK, top)
 	})
+	g.GET("/spotify/recently-played", func(c *gin.Context) {
+		recent, err := controllers.GetSpotifyLastPlayed()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to retrieve Nestor's recently played items"})
+		}
+		c.JSON(http.StatusOK, recent)
+	})
 }
