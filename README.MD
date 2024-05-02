@@ -1,5 +1,5 @@
 # Nestor's Golang API
-I'm taking a venture into learning some Golang for API development and plan for this one api to host several minor tools and cool ventures to come. The functionaliteis of the endpoints are listed below.
+I'm taking the steps necessary towards learning some Golang for API development and plan for this one api to host several minor tools and cool ventures to come. The functionaliteis of the endpoints are listed below.
 
 ## Path Breakdown
 | Path | Description |
