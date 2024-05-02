@@ -12,6 +12,7 @@ func Nestor(g *gin.RouterGroup) {
 		user, err := controllers.GetSpotifyProfile()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to get Nestor's Spotify info"})
+			return
 		}
 		c.JSON(http.StatusOK, user)
 	})
@@ -19,9 +20,11 @@ func Nestor(g *gin.RouterGroup) {
 		current, err := controllers.GetNowListening()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to get Nestor's currently playing Spotify Song"})
+			return
 		}
 		if current == nil {
 			c.JSON(http.StatusOK, gin.H{"message": "Nestor's currently not listening to Spotify music. Check back in shortly!"})
+			return
 		}
 		c.JSON(http.StatusOK, current)
 	})
@@ -29,6 +32,7 @@ func Nestor(g *gin.RouterGroup) {
 		top, err := controllers.GetTopTracks()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to get Nestor's top Spotify tracks"})
+			return
 		}
 		c.JSON(http.StatusOK, top)
 	})
@@ -36,6 +40,7 @@ func Nestor(g *gin.RouterGroup) {
 		recent, err := controllers.GetSpotifyLastPlayed()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Unable to retrieve Nestor's recently played items"})
+			return
 		}
 		c.JSON(http.StatusOK, recent)
 	})

@@ -191,6 +191,9 @@ func GetNowListening() (*CurrentTrack, error) {
 	}
 
 	fmt.Println(nowPlaying)
+	if len(nowPlaying.Item.Name) == 0 {
+		return nil, fmt.Errorf("No now playing item able to be retrieved")
+	}
 
 	return &nowPlaying, nil
 }
