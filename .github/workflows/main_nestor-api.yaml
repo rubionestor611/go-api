@@ -31,7 +31,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: nestorapi.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_63b7194404744080bcb7cd7355a89786 }}/go-api:${{ github.sha }}
+          tags: nestorapi.azurecr.io/go-api:${{ github.sha }}
           file: ./Dockerfile
 
   deploy:
