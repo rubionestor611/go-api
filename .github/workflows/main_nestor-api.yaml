@@ -49,4 +49,4 @@ jobs:
           app-name: 'nestor-api'
           slot-name: 'production'
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_e1364572c8cd4994ab36991a45e1a0bb }}
-          images: 'nestorapi.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_63b7194404744080bcb7cd7355a89786 }}/go-api:${{ github.sha }}'
+          images: 'nestorapi.azurecr.io/go-api:${{ github.sha }}'
